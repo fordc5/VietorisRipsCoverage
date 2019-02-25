@@ -1,6 +1,8 @@
 import java.io.BufferedReader;
+import java.io.FileNotFoundException;
 import java.io.FileReader;
 import java.io.IOException;
+import java.io.PrintWriter;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
@@ -69,6 +71,7 @@ public class NetworkConstruction {
 				}
 			}
 		}
+		System.out.println("tirangles: " + triangles);
 	}
 	
 
@@ -85,8 +88,25 @@ public class NetworkConstruction {
 				triMat[row][col] = value;
 			}
 		}
-		return triMat;
 		
+		
+		try {
+			PrintWriter out = new PrintWriter("output/test");
+			
+			for (double[] row : triMat) {
+				out.println(Arrays.toString(row));
+			}
+			out.close();
+		} catch (FileNotFoundException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+		
+		
+		
+		
+		
+		return triMat;
 	}
 	
 	//solve Mx = b
@@ -94,7 +114,32 @@ public class NetworkConstruction {
 		
 		RealMatrix coefficients =
 			    new Array2DRowRealMatrix(M);
-		DecompositionSolver solver = new QRDecomposition(coefficients).getSolver();
+		QRDecomposition decomposition = new QRDecomposition(coefficients);
+		
+		RealMatrix q = decomposition.getQ();
+		q = q.transpose();
+		Array2DRowRealMatrix bSt = new Array2DRowRealMatrix(b);
+		RealMatrix newB = q.multiply(bSt);
+		
+		double[][] rdata = decomposition.getR().getData();
+		try {
+			PrintWriter out = new PrintWriter("output/rtest");
+			
+			for (double[] row : rdata) {
+				out.println(Arrays.toString(row));
+			}
+			out.close();
+		} catch (FileNotFoundException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+		
+		
+		/*DecompositionSolver solver1 = decomposition.getR().getSolver();
+		RealVector constants1 = new ArrayRealVector(newB);
+		RealVector solution1 = solver1.solve(constants1);*/
+		
+		DecompositionSolver solver = decomposition.getSolver();
 		RealVector constants = new ArrayRealVector(b);
 		RealVector solution = solver.solve(constants);
 		return solution;
@@ -104,8 +149,10 @@ public class NetworkConstruction {
 	
 	public boolean vietorisRipsCoverageTest(ArrayList<Segment> gamma) {
 		
+		System.out.println("network: " + network);
+		
 		findTriangles();
-		System.out.println(triangles.size());
+		System.out.println("num triangles: "+triangles.size());
 		
 		// construct b column vector with values of 1 for edges in gamma
 		// and zeros for everything else.
@@ -117,20 +164,28 @@ public class NetworkConstruction {
 			}
 		}
 		
+		System.out.println("corresponding edges" + edges);
+		System.out.println("solution vector: ");
+		print1d(b);
+		
 		double[][] M = generateTriangleEdgeMatrix();
 		
 		RealVector sol = solveMatrix(M, b);
 		
 		System.out.println("solution" + Arrays.toString(sol.toArray()));
 		
-		//System.out.println(M.length);
-		//System.out.println(M[0].length);
+		
+		//verify solution
+		Array2DRowRealMatrix mat = new Array2DRowRealMatrix(M);
+		Array2DRowRealMatrix solF = new Array2DRowRealMatrix(sol.toArray());
+		Array2DRowRealMatrix res = mat.multiply(solF);
+		System.out.println("verification: " + res.toString());
+		
+		
 		
 		//print2d(M);
 		
-		System.out.println("okay");
-		
-		print1d(b);
+		//print1d(b);
 		
 		return false;
 	}
