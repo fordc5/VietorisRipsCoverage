@@ -2,7 +2,7 @@ import java.util.HashMap;
 
 public class Triangle {
 
-	private int node1, node2, node3;
+	public int node1, node2, node3;
 	private Segment edge1, edge2, edge3;
 	private HashMap<Segment, Integer> edgeCoefficientMap;
 	

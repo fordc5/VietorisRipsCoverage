@@ -91,10 +91,10 @@ public class NetworkConstruction {
 		
 		
 		try {
-			PrintWriter out = new PrintWriter("output/test");
+			PrintWriter out = new PrintWriter("output/triangleEdgeMatrix");
 			
 			for (double[] row : triMat) {
-				out.println(Arrays.toString(row));
+				out.println(Arrays.toString(row).substring(1, Arrays.toString(row).length()-1));
 			}
 			out.close();
 		} catch (FileNotFoundException e) {
@@ -116,6 +116,7 @@ public class NetworkConstruction {
 			    new Array2DRowRealMatrix(M);
 		QRDecomposition decomposition = new QRDecomposition(coefficients);
 		
+		/*
 		RealMatrix q = decomposition.getQ();
 		q = q.transpose();
 		Array2DRowRealMatrix bSt = new Array2DRowRealMatrix(b);
@@ -133,16 +134,41 @@ public class NetworkConstruction {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
+		*/
 		
 		
-		/*DecompositionSolver solver1 = decomposition.getR().getSolver();
-		RealVector constants1 = new ArrayRealVector(newB);
-		RealVector solution1 = solver1.solve(constants1);*/
+		//method 2.5
+		RealMatrix q = decomposition.getQ();
+		RealMatrix r = decomposition.getR();
 		
+		System.out.println(r.getData());
+		
+		RealMatrix qT = q.transpose();
+		
+		RealMatrix bMatrix = new Array2DRowRealMatrix(b);
+
+		
+		RealMatrix productQTB = qT.multiply(bMatrix);
+		
+		//DecompositionSolver solver = new EigenDecomposition(r).getSolver();
+		
+		
+		//RealMatrix solution = solver.solve(bMatrix);
+		
+		double[] solution = GaussianElimination.lsolve(r.getData(), b);
+		System.out.println(solution.length);
+		
+		System.out.println("SOLUTION");
+		print1d(solution);
+		
+		return new ArrayRealVector(solution);
+		
+		/*
 		DecompositionSolver solver = decomposition.getSolver();
 		RealVector constants = new ArrayRealVector(b);
 		RealVector solution = solver.solve(constants);
 		return solution;
+		*/
 	}
 	
 	
@@ -168,11 +194,30 @@ public class NetworkConstruction {
 		System.out.println("solution vector: ");
 		print1d(b);
 		
+		
+		try {
+			PrintWriter out = new PrintWriter("output/solutionColumnVector");
+			
+			
+			out.println(Arrays.toString(b).substring(1, Arrays.toString(b).length()-1));
+			
+			out.close();
+		} catch (FileNotFoundException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+		
+		
+		
 		double[][] M = generateTriangleEdgeMatrix();
+		
+		
+		
+		
 		
 		RealVector sol = solveMatrix(M, b);
 		
-		System.out.println("solution" + Arrays.toString(sol.toArray()));
+		//System.out.println("solution" + Arrays.toString(sol.toArray()));
 		
 		
 		//verify solution
@@ -181,6 +226,7 @@ public class NetworkConstruction {
 		Array2DRowRealMatrix res = mat.multiply(solF);
 		System.out.println("verification: " + res.toString());
 		
+		System.out.println(getNumEdges());
 		
 		
 		//print2d(M);
@@ -189,6 +235,46 @@ public class NetworkConstruction {
 		
 		return false;
 	}
+	
+	
+	public void checkTriangles() {
+		ArrayList<Double> solList;
+		try {	
+			
+			solList = new ArrayList<Double>();
+			BufferedReader br = new BufferedReader(new FileReader("data/solutionMatrix1.txt"));
+			String line;
+			while ((line = br.readLine()) != null) {
+				double min = 0.0000000000001;
+				double num = Double.parseDouble(line);
+				if (num > min) {
+					solList.add(num);
+				} else {
+					solList.add(0.0);
+				}
+			}
+		} catch (Exception e) {
+			e.printStackTrace();
+			solList = new ArrayList<Double>();
+		}
+		
+			
+		HashSet<Integer> acceptedNodes = new HashSet<Integer>();
+		for (int numindex = 0; numindex < solList.size(); numindex++) {
+			if (solList.get(numindex) != 0.0) {
+				int node1 = triangles.get(numindex).node1;
+				int node2 = triangles.get(numindex).node2;
+				int node3 = triangles.get(numindex).node3;
+				acceptedNodes.add(node1);
+				acceptedNodes.add(node2);
+				acceptedNodes.add(node3);
+			}
+		}
+		
+		System.out.println(acceptedNodes);
+		
+	}
+	
 	
 	public Hashtable<Integer, Set<Integer>> getNetwork() {
 		return network;
@@ -236,6 +322,11 @@ public class NetworkConstruction {
 						 };
 		ArrayList<Segment> gamma = new ArrayList<Segment>(Arrays.asList(gArr));
 		test2.vietorisRipsCoverageTest(gamma);
+		
+		
+		
+		test2.checkTriangles();
+		
 		//test2.printNetwork();
 		//test2.findTriangles();
 		//test2.printTriangles();
